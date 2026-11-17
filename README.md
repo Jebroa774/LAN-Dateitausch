@@ -1,6 +1,6 @@
 # LAN-Dateitausch für Windows
 
-Dateien und Ordner direkt zwischen Windows-PCs im selben Heimnetz übertragen. Laufende LAN-Dateitausch-Apps erkennen einander automatisch. Dateiübertragungen verwenden TLS 1.3; beim ersten Verbinden wird auf beiden PCs ein Sicherheitscode verglichen und bestätigt. Gekoppelte Geräte werden anschließend über ihre gespeicherten Zertifikate geprüft. Jede neue Sendung braucht eine Empfangsbestätigung.
+Dateien und Ordner direkt zwischen Windows-PCs im selben Heimnetz übertragen. Laufende LAN-Dateitausch-Apps erkennen einander automatisch. Zum Verbinden eine Anfrage senden und am anderen PC **Annehmen** anklicken. Eine Codeeingabe oder ein Codevergleich ist nicht erforderlich. Dateiübertragungen verwenden TLS 1.3; angenommene Geräte werden anschließend über ihre gespeicherten Zertifikate geprüft. Jede neue Sendung braucht eine Empfangsbestätigung.
 
 **Installation auf dem anderen PC:** PowerShell öffnen und diesen Befehl einfügen:
 
@@ -16,8 +16,10 @@ Alternativ das [ZIP aus dem Release herunterladen](https://github.com/Jebroa774/
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\Installieren.ps1' -LaunchApp transfer
 ```
 
-Danach LAN-Dateitausch auf beiden PCs öffnen, das andere Gerät koppeln und den identischen Sicherheitscode auf beiden Seiten bestätigen. Dateien bewusst auswählen; auf dem Empfänger die neue Sendung annehmen. Bei einer Windows-Firewall-Abfrage den Zugriff im privaten Netzwerk erlauben. Gastnetze, WLAN-Isolation und getrennte VLANs können die automatische Erkennung verhindern. Die App verändert keine Firewallregeln.
+LAN-Dateitausch auf beiden PCs aktualisieren und öffnen, beim anderen Gerät **Verbinden** anklicken und dort die Anfrage **Annehmen**. Der Sender braucht keine zweite Bestätigung. Dateien bewusst auswählen; auf dem Empfänger die neue Sendung annehmen. Bei einer Windows-Firewall-Abfrage den Zugriff im privaten Netzwerk erlauben. Gastnetze, WLAN-Isolation und getrennte VLANs können die automatische Erkennung verhindern. Die App verändert keine Firewallregeln.
 
-Version **1.1.0** wurde mit 109 Tests sowie mit zwei lokalen App-Instanzen einschließlich tatsächlichem TLS-Verkehr und unabhängig geprüften Datei-Prüfsummen getestet. Ein automatischer Online-Updater ist in dieser Version nicht enthalten.
+Beim ersten Annehmen wird dem angefragten Gerät vertraut. Ohne unabhängigen Vergleich ist diese erste Zuordnung nicht gegen aktive Nachahmung eines Gerätenamens abgesichert; gespeicherte Schlüsselwechsel bleiben danach gesperrt. Dieses Prinzip des Vertrauens beim ersten Kontakt und seine Grenzen sind in [RFC 4251, Abschnitt 9.3.4](https://www.rfc-editor.org/rfc/rfc4251.html#section-9.3.4) beschrieben. Eine Namensanzeige ist kein unabhängig geprüfter Identitätsnachweis.
+
+Version **1.2.0** hat 120 Komponenten- und Integrationstests bestanden. Zusätzlich wurden zwei lokale App-Instanzen einschließlich tatsächlichem TLS-Verkehr, Anfrage/Annehmen und unabhängig geprüften Datei-Prüfsummen getestet. Ein automatischer Online-Updater ist in dieser Version nicht enthalten.
 
 Dieses Repository verteilt den Einzelinstaller und den geprüften Download-Bootstrap. Geräteidentitäten und private Schlüssel entstehen erst auf dem jeweiligen PC; Einstellungen und Empfangsdateien bleiben dort lokal. Das ZIP enthält die Node-Laufzeit samt Lizenzhinweisen unter `runtime/node-LICENSE.txt`.

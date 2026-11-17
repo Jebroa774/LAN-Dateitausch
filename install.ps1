@@ -46,7 +46,7 @@ function Test-LanPayloadName([string]$Name, [bool]$Directory = $false) {
 
 # Kept as a function so tests can verify local dummy archives by dot-sourcing
 # this file. The production entrypoint supplies the immutable release hash.
-function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.1.0') {
+function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.2.0') {
   Add-Type -AssemblyName System.IO.Compression
   if ($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'GH_HASH: Ungueltige erwartete Pruefsumme.' }
   $ArchivePath = [IO.Path]::GetFullPath($ArchivePath)
@@ -120,13 +120,13 @@ function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [
 }
 
 function Get-LanGithubArchive([Uri]$Uri, [string]$Destination) {
-  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.1\.0/LAN-Dateitausch-1\.1\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
+  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.2\.0/LAN-Dateitausch-1\.2\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
   $current = $Uri
   for ($redirects = 0; $redirects -le 5; $redirects++) {
     if ($current.Scheme -cne 'https' -or $current.Port -ne 443 -or $current.UserInfo -or $current.Host -notin @('github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com', 'github-releases.githubusercontent.com')) { throw 'GH_URL: Eine unerwartete Downloadweiterleitung wurde abgewiesen.' }
     $request = [Net.HttpWebRequest]::Create($current)
-    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.1.0'
+    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.2.0'
     $response = $null
     try {
       $response = $request.GetResponse()
@@ -162,9 +162,9 @@ function Remove-LanInstallWorkspace([string]$Directory, [string]$Parent, [string
 
 function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = '') {
   if ($Repository -notmatch '^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$') { throw 'GH_URL: Ungueltiger GitHub-Repositoryname.' }
-  $version = '1.1.0'
-  $sha256 = '0bea1a5b62a970720ab902fd6bcbbb0fd4ff136b92afbb8c2b21ced056f06249'
-  $asset = 'LAN-Dateitausch-1.1.0-Windows.zip'
+  $version = '1.2.0'
+  $sha256 = '04757a56401dc51bf82ec0be8a71df28bfbd649a3307061b3bdae2954c3d976c'
+  $asset = 'LAN-Dateitausch-1.2.0-Windows.zip'
   $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
   Assert-LanPlainPath $tempRoot
   $nonce = [Guid]::NewGuid().ToString('N'); $workspace = Join-Path $tempRoot ('lan-dateitausch-install-' + $nonce)
@@ -178,7 +178,7 @@ function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = ''
       if ($local.PSIsContainer -or $local.Length -gt 134217728) { throw 'GH_SIZE: Das lokale ZIP-Paket ist zu gross.' }
       [IO.File]::Copy($local.FullName, $zipPath, $false)
     } else {
-      Write-Host 'LAN-Dateitausch 1.1.0 wird von GitHub heruntergeladen ...'
+      Write-Host 'LAN-Dateitausch 1.2.0 wird von GitHub heruntergeladen ...'
       Get-LanGithubArchive ([Uri]('https://github.com/' + $Repository + '/releases/download/v' + $version + '/' + $asset)) $zipPath
     }
     $payload = Join-Path $workspace 'payload'
@@ -189,7 +189,7 @@ function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = ''
     $process = Start-Process -FilePath $powershell -ArgumentList @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $installer + '"'), '-SourceRoot', ('"' + $payload + '"'), '-LaunchApp', 'transfer') -WindowStyle Hidden -PassThru
     try { $process.WaitForExit(); $process.Refresh(); if ($process.ExitCode -ne 0) { throw 'GH_INSTALL: Installation nicht abgeschlossen. Aktive Dateiuebertragungen oder Dateivorgaenge zuerst beenden und erneut versuchen.' } }
     finally { $process.Dispose() }
-    Write-Host 'LAN-Dateitausch 1.1.0 ist installiert. Der Appstart wurde angefordert.'
+    Write-Host 'LAN-Dateitausch 1.2.0 ist installiert. Der Appstart wurde angefordert.'
   } finally {
     try { Remove-LanInstallWorkspace $workspace $tempRoot $nonce } catch { Write-Warning 'Der eigene Installations-Tempordner konnte nicht sicher aufgeraeumt werden und wurde beibehalten.' }
   }

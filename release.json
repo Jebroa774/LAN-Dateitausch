@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "app": "lan-dateitausch",
+  "version": "1.1.0",
+  "tag": "v1.1.0",
+  "asset": "LAN-Dateitausch-1.1.0-Windows.zip",
+  "download_url": "https://github.com/Jebroa774/LAN-Dateitausch/releases/download/v1.1.0/LAN-Dateitausch-1.1.0-Windows.zip",
+  "sha256": "0bea1a5b62a970720ab902fd6bcbbb0fd4ff136b92afbb8c2b21ced056f06249",
+  "bytes": 35241833,
+  "platform": "windows",
+  "architecture": "x64",
+  "apps": ["transfer"],
+  "file_transport": "TLSv1.3",
+  "node_included": true,
+  "requires_edge": true,
+  "minimum_dotnet_framework": "4.8",
+  "personal_data_included": false
+}

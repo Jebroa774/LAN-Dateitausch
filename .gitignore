@@ -1,0 +1,9 @@
+*.zip
+*.pfx
+*.p12
+*.pem
+*.key
+data/
+run/
+output/
+browser-profiles/

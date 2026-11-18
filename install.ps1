@@ -46,7 +46,7 @@ function Test-LanPayloadName([string]$Name, [bool]$Directory = $false) {
 
 # Kept as a function so tests can verify local dummy archives by dot-sourcing
 # this file. The production entrypoint supplies the immutable release hash.
-function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.2.0') {
+function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.3.0', [long]$ExpectedLength = -1) {
   Add-Type -AssemblyName System.IO.Compression
   if ($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'GH_HASH: Ungueltige erwartete Pruefsumme.' }
   $ArchivePath = [IO.Path]::GetFullPath($ArchivePath)
@@ -54,6 +54,7 @@ function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [
   Assert-LanPlainPath $ArchivePath
   $item = Get-Item -LiteralPath $ArchivePath -Force
   if ($item.PSIsContainer -or $item.Length -le 0 -or $item.Length -gt 134217728) { throw 'GH_SIZE: Das ZIP-Paket hat eine unzulaessige Groesse.' }
+  if ($ExpectedLength -ge 0 -and $item.Length -ne $ExpectedLength) { throw 'GH_SIZE: Das ZIP-Paket entspricht nicht der Groesse des Releases.' }
   if (Test-Path -LiteralPath $Destination) { throw 'GH_DESTINATION: Entpacken ist nur in einen neuen Ordner erlaubt.' }
   Assert-LanPlainPath ([IO.Path]::GetDirectoryName($Destination))
   $stream = $null; $zip = $null
@@ -97,7 +98,7 @@ function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [
       $listed.Add($file.path, $file)
     }
     if ($files.Count -ne $listed.Count + 1) { throw 'GH_UNLISTED: Das ZIP enthaelt Dateien ausserhalb des Manifests.' }
-    foreach ($required in @('LAN-Dateitausch.exe', 'LAN-Dateitausch.ico', 'desktop-launch.mjs', 'Installieren.ps1', 'Deinstallieren.ps1', 'README.txt', 'runtime/node.exe', 'runtime/node-LICENSE.txt', 'app/package.json', 'app/server.mjs', 'app/static/index.html', 'app/static/app.js', 'app/static/styles.css', 'app/modules/secure-transfer.mjs', 'app/modules/transfer-identity.mjs', 'app/modules/transfer-discovery.mjs', 'app/modules/transfer.mjs', 'app/modules/network.mjs', 'app/modules/network-vendors.json', 'app/modules/files.mjs', 'app/modules/windows-files.mjs')) {
+    foreach ($required in @('LAN-Dateitausch.exe', 'LAN-Dateitausch.ico', 'desktop-launch.mjs', 'Installieren.ps1', 'Deinstallieren.ps1', 'README.txt', 'runtime/node.exe', 'runtime/node-LICENSE.txt', 'app/package.json', 'app/server.mjs', 'app/static/index.html', 'app/static/app.js', 'app/static/styles.css', 'app/modules/secure-transfer.mjs', 'app/modules/transfer-identity.mjs', 'app/modules/transfer-discovery.mjs', 'app/modules/transfer-sync.mjs', 'app/modules/transfer.mjs', 'app/modules/network.mjs', 'app/modules/network-vendors.json', 'app/modules/files.mjs', 'app/modules/windows-files.mjs')) {
       if (-not $listed.ContainsKey($required)) { throw 'GH_REQUIRED: Eine erforderliche Paketdatei fehlt.' }
     }
     # No output has been extracted before every payload hash has passed.
@@ -119,21 +120,22 @@ function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [
   } finally { if ($zip) { $zip.Dispose() }; if ($stream) { $stream.Dispose() } }
 }
 
-function Get-LanGithubArchive([Uri]$Uri, [string]$Destination) {
-  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.2\.0/LAN-Dateitausch-1\.2\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
+function Get-LanGithubArchive([Uri]$Uri, [string]$Destination, [long]$ExpectedLength) {
+  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.3\.0/LAN-Dateitausch-1\.3\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
   $current = $Uri
   for ($redirects = 0; $redirects -le 5; $redirects++) {
     if ($current.Scheme -cne 'https' -or $current.Port -ne 443 -or $current.UserInfo -or $current.Host -notin @('github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com', 'github-releases.githubusercontent.com')) { throw 'GH_URL: Eine unerwartete Downloadweiterleitung wurde abgewiesen.' }
     $request = [Net.HttpWebRequest]::Create($current)
-    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.2.0'
+    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.3.0'
     $response = $null
     try {
       $response = $request.GetResponse()
       if ([int]$response.StatusCode -in @(301, 302, 303, 307, 308)) { $current = [Uri]::new($current, [string]$response.Headers['Location']); continue }
-      if ([int]$response.StatusCode -ne 200 -or $response.ContentLength -gt 134217728) { throw 'GH_DOWNLOAD: Der Download ist nicht verfuegbar oder zu gross.' }
+      if ([int]$response.StatusCode -ne 200) { throw 'GH_DOWNLOAD: Der Download ist nicht verfuegbar.' }
+      if ($response.ContentLength -ge 0 -and $response.ContentLength -ne $ExpectedLength) { throw 'GH_SIZE: Der Download entspricht nicht der Groesse des Releases.' }
       $archiveInputStream = $response.GetResponseStream(); $archiveOutputStream = $null
-      try { $archiveOutputStream = [IO.File]::Open($Destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None); $null = Copy-LanBoundedStream $archiveInputStream $archiveOutputStream $response.ContentLength 134217728 }
+      try { $archiveOutputStream = [IO.File]::Open($Destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None); $null = Copy-LanBoundedStream $archiveInputStream $archiveOutputStream $ExpectedLength $ExpectedLength }
       finally { $archiveInputStream.Dispose(); if ($archiveOutputStream) { $archiveOutputStream.Dispose() } }
       return
     } finally { if ($response) { $response.Dispose() } }
@@ -162,9 +164,10 @@ function Remove-LanInstallWorkspace([string]$Directory, [string]$Parent, [string
 
 function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = '') {
   if ($Repository -notmatch '^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$') { throw 'GH_URL: Ungueltiger GitHub-Repositoryname.' }
-  $version = '1.2.0'
-  $sha256 = '04757a56401dc51bf82ec0be8a71df28bfbd649a3307061b3bdae2954c3d976c'
-  $asset = 'LAN-Dateitausch-1.2.0-Windows.zip'
+  $version = '1.3.0'
+  $sha256 = '2a9aae36671cdc377e4b63f1b941b847df998c698e7e3177cabf35dc26266951'
+  $archiveBytes = 35244942
+  $asset = 'LAN-Dateitausch-1.3.0-Windows.zip'
   $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
   Assert-LanPlainPath $tempRoot
   $nonce = [Guid]::NewGuid().ToString('N'); $workspace = Join-Path $tempRoot ('lan-dateitausch-install-' + $nonce)
@@ -175,21 +178,29 @@ function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = ''
     if ($ArchivePath) {
       Assert-LanPlainPath $ArchivePath
       $local = Get-Item -LiteralPath $ArchivePath -Force
-      if ($local.PSIsContainer -or $local.Length -gt 134217728) { throw 'GH_SIZE: Das lokale ZIP-Paket ist zu gross.' }
-      [IO.File]::Copy($local.FullName, $zipPath, $false)
+      if ($local.PSIsContainer -or $local.Length -ne $archiveBytes) { throw 'GH_SIZE: Das lokale ZIP-Paket entspricht nicht der Groesse des Releases.' }
+      $localStream = [IO.File]::Open($local.FullName, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+      $stagedStream = $null
+      try {
+        $stagedStream = [IO.File]::Open($zipPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $null = Copy-LanBoundedStream $localStream $stagedStream $archiveBytes $archiveBytes
+      } finally {
+        $localStream.Dispose()
+        if ($stagedStream) { $stagedStream.Dispose() }
+      }
     } else {
-      Write-Host 'LAN-Dateitausch 1.2.0 wird von GitHub heruntergeladen ...'
-      Get-LanGithubArchive ([Uri]('https://github.com/' + $Repository + '/releases/download/v' + $version + '/' + $asset)) $zipPath
+      Write-Host "LAN-Dateitausch $version wird von GitHub heruntergeladen ..."
+      Get-LanGithubArchive ([Uri]('https://github.com/' + $Repository + '/releases/download/v' + $version + '/' + $asset)) $zipPath $archiveBytes
     }
     $payload = Join-Path $workspace 'payload'
-    $null = Expand-VerifiedLanRelease $zipPath $payload $sha256 $version
+    $null = Expand-VerifiedLanRelease $zipPath $payload $sha256 $version $archiveBytes
     Write-Host 'Paket und alle Dateien sind geprueft. Installation fuer den aktuellen Benutzer ...'
     $powershell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
     $installer = Join-Path $payload 'Installieren.ps1'
     $process = Start-Process -FilePath $powershell -ArgumentList @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $installer + '"'), '-SourceRoot', ('"' + $payload + '"'), '-LaunchApp', 'transfer') -WindowStyle Hidden -PassThru
     try { $process.WaitForExit(); $process.Refresh(); if ($process.ExitCode -ne 0) { throw 'GH_INSTALL: Installation nicht abgeschlossen. Aktive Dateiuebertragungen oder Dateivorgaenge zuerst beenden und erneut versuchen.' } }
     finally { $process.Dispose() }
-    Write-Host 'LAN-Dateitausch 1.2.0 ist installiert. Der Appstart wurde angefordert.'
+    Write-Host "LAN-Dateitausch $version ist installiert. Der Appstart wurde angefordert."
   } finally {
     try { Remove-LanInstallWorkspace $workspace $tempRoot $nonce } catch { Write-Warning 'Der eigene Installations-Tempordner konnte nicht sicher aufgeraeumt werden und wurde beibehalten.' }
   }

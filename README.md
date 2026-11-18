@@ -20,6 +20,6 @@ LAN-Dateitausch auf beiden PCs aktualisieren und öffnen, beim anderen Gerät **
 
 Beim ersten Annehmen wird dem angefragten Gerät vertraut. Ohne unabhängigen Vergleich ist diese erste Zuordnung nicht gegen aktive Nachahmung eines Gerätenamens abgesichert; gespeicherte Schlüsselwechsel bleiben danach gesperrt. Dieses Prinzip des Vertrauens beim ersten Kontakt und seine Grenzen sind in [RFC 4251, Abschnitt 9.3.4](https://www.rfc-editor.org/rfc/rfc4251.html#section-9.3.4) beschrieben. Eine Namensanzeige ist kein unabhängig geprüfter Identitätsnachweis.
 
-Version **1.2.0** hat 120 Komponenten- und Integrationstests bestanden. Zusätzlich wurden zwei lokale App-Instanzen einschließlich tatsächlichem TLS-Verkehr, Anfrage/Annehmen und unabhängig geprüften Datei-Prüfsummen getestet. Ein automatischer Online-Updater ist in dieser Version nicht enthalten.
+Mit **Version 1.3.0** kann die Prototypen-Werkbank ab Version 1.10.0 ausgewählte Projektdokumentation mit einem gekoppelten PC abgleichen. Die Freigabe wird auf beiden PCs in der Werkbank unter **Daten & Sicherung → Projektsynchronisierung** eingerichtet. Dateiübertragungen brauchen weiterhin eine Empfangsbestätigung.
 
 Dieses Repository verteilt den Einzelinstaller und den geprüften Download-Bootstrap. Geräteidentitäten und private Schlüssel entstehen erst auf dem jeweiligen PC; Einstellungen und Empfangsdateien bleiben dort lokal. Das ZIP enthält die Node-Laufzeit samt Lizenzhinweisen unter `runtime/node-LICENSE.txt`.

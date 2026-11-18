@@ -2,6 +2,8 @@
 
 Dateien und Ordner direkt zwischen Windows-PCs im selben Heimnetz übertragen. Laufende LAN-Dateitausch-Apps erkennen einander automatisch. Zum Verbinden eine Anfrage senden und am anderen PC **Annehmen** anklicken. Eine Codeeingabe oder ein Codevergleich ist nicht erforderlich. Dateiübertragungen verwenden TLS 1.3; angenommene Geräte werden anschließend über ihre gespeicherten Zertifikate geprüft. Jede neue Sendung braucht eine Empfangsbestätigung.
 
+Die Oberfläche zeigt **Geräte**, **Senden** und **Empfangen**. Über **Empfangsordner öffnen** findest du die empfangenen Elemente im Explorer. Einzeln gesendete Dateien und Ordner behalten ihren Namen. Gemeinsame Sendungen bekommen einen Ordner mit einem Namen aus ihrem Inhalt. Gleiche Namen erhalten eine Nummer wie `Fotos (2)`.
+
 **Installation auf dem anderen PC:** PowerShell öffnen und diesen Befehl einfügen:
 
 ```powershell

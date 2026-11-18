@@ -46,7 +46,7 @@ function Test-LanPayloadName([string]$Name, [bool]$Directory = $false) {
 
 # Kept as a function so tests can verify local dummy archives by dot-sourcing
 # this file. The production entrypoint supplies the immutable release hash.
-function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.3.0', [long]$ExpectedLength = -1) {
+function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [string]$ExpectedSha256, [string]$ExpectedVersion = '1.4.0', [long]$ExpectedLength = -1) {
   Add-Type -AssemblyName System.IO.Compression
   if ($ExpectedSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'GH_HASH: Ungueltige erwartete Pruefsumme.' }
   $ArchivePath = [IO.Path]::GetFullPath($ArchivePath)
@@ -121,13 +121,13 @@ function Expand-VerifiedLanRelease([string]$ArchivePath, [string]$Destination, [
 }
 
 function Get-LanGithubArchive([Uri]$Uri, [string]$Destination, [long]$ExpectedLength) {
-  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.3\.0/LAN-Dateitausch-1\.3\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
+  if ($Uri.Scheme -cne 'https' -or $Uri.Host -cne 'github.com' -or $Uri.UserInfo -or $Uri.Query -or $Uri.Fragment -or $Uri.AbsolutePath -notmatch '^/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/releases/download/v1\.4\.0/LAN-Dateitausch-1\.4\.0-Windows\.zip$') { throw 'GH_URL: Nur die feste GitHub-Release-Adresse ist erlaubt.' }
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
   $current = $Uri
   for ($redirects = 0; $redirects -le 5; $redirects++) {
     if ($current.Scheme -cne 'https' -or $current.Port -ne 443 -or $current.UserInfo -or $current.Host -notin @('github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com', 'github-releases.githubusercontent.com')) { throw 'GH_URL: Eine unerwartete Downloadweiterleitung wurde abgewiesen.' }
     $request = [Net.HttpWebRequest]::Create($current)
-    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.3.0'
+    $request.AllowAutoRedirect = $false; $request.Timeout = 30000; $request.ReadWriteTimeout = 30000; $request.UserAgent = 'LAN-Dateitausch-Installer/1.4.0'
     $response = $null
     try {
       $response = $request.GetResponse()
@@ -164,10 +164,10 @@ function Remove-LanInstallWorkspace([string]$Directory, [string]$Parent, [string
 
 function Install-LanGithubRelease([string]$Repository, [string]$ArchivePath = '') {
   if ($Repository -notmatch '^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$') { throw 'GH_URL: Ungueltiger GitHub-Repositoryname.' }
-  $version = '1.3.0'
-  $sha256 = '2a9aae36671cdc377e4b63f1b941b847df998c698e7e3177cabf35dc26266951'
-  $archiveBytes = 35244942
-  $asset = 'LAN-Dateitausch-1.3.0-Windows.zip'
+  $version = '1.4.0'
+  $sha256 = '09c238082d563360e17b65a13831020004fb8207ba7dbc406f3eb9c0face2763'
+  $archiveBytes = 35245927
+  $asset = 'LAN-Dateitausch-1.4.0-Windows.zip'
   $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
   Assert-LanPlainPath $tempRoot
   $nonce = [Guid]::NewGuid().ToString('N'); $workspace = Join-Path $tempRoot ('lan-dateitausch-install-' + $nonce)
